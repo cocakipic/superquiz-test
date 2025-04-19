@@ -1,4 +1,4 @@
-let socket = io();
+let socket = io("https://superquiz-backend.onrender.com");
 let roomCode = "";
 let pseudo = "";
 let playerId = "";
