@@ -25,7 +25,7 @@ function goToMultiplayer() {
   pseudo = document.getElementById("pseudo").value;
   if (!pseudo) return alert("Entre ton pseudo !");
   isMultiplayer = true;
-  socket = io("https://superquiz-test.onrender.com"); // Lien vers ton backend Render
+  socket = io("https://superquiz-test.onrender.com");
   document.querySelector(".container").classList.add("hidden");
   document.getElementById("createJoin").classList.remove("hidden");
 }
@@ -39,28 +39,6 @@ function joinRoom() {
   if (!code) return alert("Code de salle requis !");
   socket.emit('joinRoom', { pseudo, roomCode: code });
 }
-
-socket?.on('roomCreated', code => {
-  document.getElementById("createJoin").classList.add("hidden");
-  document.getElementById("waiting").innerText = "Salle créée : " + code + " — En attente d'autres joueurs...";
-  document.getElementById("waiting").classList.remove("hidden");
-});
-
-socket?.on('playersUpdate', players => {
-  document.getElementById("waiting").innerText = "Joueurs : " + players.join(" & ");
-});
-
-socket?.on('startGame', () => {
-  fetch('/questions')
-    .then(res => res.json())
-    .then(data => {
-      questions = data.slice(0, 15);
-      current = 0;
-      document.getElementById("waiting").classList.add("hidden");
-      document.getElementById("quiz").classList.remove("hidden");
-      showQuestion();
-    });
-});
 
 function showQuestion() {
   if (current >= questions.length) {
@@ -106,8 +84,30 @@ function submitAnswer() {
 }
 
 function normalize(str) {
-  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return str.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
+
+socket?.on('roomCreated', code => {
+  document.getElementById("createJoin").classList.add("hidden");
+  document.getElementById("waiting").innerText = "Salle créée : " + code + " — En attente d'autres joueurs...";
+  document.getElementById("waiting").classList.remove("hidden");
+});
+
+socket?.on('playersUpdate', players => {
+  document.getElementById("waiting").innerText = "Joueurs : " + players.join(" & ");
+});
+
+socket?.on('startGame', () => {
+  fetch('/questions')
+    .then(res => res.json())
+    .then(data => {
+      questions = data.slice(0, 15);
+      current = 0;
+      document.getElementById("waiting").classList.add("hidden");
+      document.getElementById("quiz").classList.remove("hidden");
+      showQuestion();
+    });
+});
 
 socket?.on("updateScores", players => {
   const table = document.getElementById("scoreTable");

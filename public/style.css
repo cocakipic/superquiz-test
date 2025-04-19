@@ -1,10 +1,8 @@
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #2980b9, #6dd5fa);
-  background-attachment: fixed;
-  background-size: cover;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to right, #6dd5ed, #2193b0);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -13,11 +11,16 @@ body {
   min-height: 100vh;
   padding: 40px 20px;
 }
-h1, h2 {
+
+.container {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 30px;
+  border-radius: 20px;
+  max-width: 500px;
+  width: 100%;
   text-align: center;
-  font-size: 2.5rem;
-  margin-bottom: 10px;
 }
+
 button {
   background-color: #27ae60;
   border: none;
@@ -27,13 +30,12 @@ button {
   margin: 10px;
   color: white;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
+
 button:hover {
   background-color: #2ecc71;
-  transform: translateY(-3px);
 }
+
 input {
   padding: 12px;
   border-radius: 8px;
@@ -43,15 +45,7 @@ input {
   max-width: 300px;
   margin-bottom: 20px;
 }
-.container {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 30px;
-  border-radius: 20px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-  max-width: 500px;
-  width: 100%;
-  text-align: center;
-}
+
 .hidden {
   display: none;
 }
