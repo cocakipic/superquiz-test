@@ -11,6 +11,7 @@ function startSolo() {
   isMultiplayer = false;
   document.querySelector(".container").classList.add("hidden");
   document.getElementById("quiz").classList.remove("hidden");
+
   fetch('https://superquiz-test.onrender.com/questions')
     .then(res => res.json())
     .then(data => {
@@ -18,11 +19,10 @@ function startSolo() {
       current = 0;
       score = 0;
       showQuestion();
-    });
-.catch(error => {
-      console.error("Erreur lors du chargement des questions :", error);
-    });
+    })
+    .catch(error => console.error("Erreur chargement questions :", error));
 }
+
 function goToMultiplayer() {
   pseudo = document.getElementById("pseudo").value;
   if (!pseudo) return alert("Entre ton pseudo !");
@@ -54,11 +54,7 @@ function showQuestion() {
   document.getElementById("question").textContent = q.question;
   document.getElementById("answerInput").value = "";
   document.getElementById("answerInput").style.display = "inline-block";
-  if (!isMultiplayer) {
-    document.getElementById("buzzBtn").style.display = "none";
-  } else {
-    document.getElementById("buzzBtn").style.display = "inline-block";
-  }
+  document.getElementById("buzzBtn").style.display = isMultiplayer ? "inline-block" : "none";
 }
 
 function buzz() {
@@ -86,7 +82,7 @@ function submitAnswer() {
 }
 
 function normalize(str) {
-  return str.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 socket?.on('roomCreated', code => {
