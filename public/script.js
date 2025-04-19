@@ -11,7 +11,7 @@ function startSolo() {
   isMultiplayer = false;
   document.querySelector(".container").classList.add("hidden");
   document.getElementById("quiz").classList.remove("hidden");
-  fetch('/questions')
+  fetch('https://superquiz-test.onrender.com/questions')
     .then(res => res.json())
     .then(data => {
       questions = data.slice(0, 15);
@@ -98,7 +98,7 @@ socket?.on('playersUpdate', players => {
 });
 
 socket?.on('startGame', () => {
-  fetch('/questions')
+  fetch('https://superquiz-test.onrender.com/questions')
     .then(res => res.json())
     .then(data => {
       questions = data.slice(0, 15);
