@@ -43,12 +43,13 @@ function joinRoom() {
 }
 
 function showQuestion() {
-  if (current >= questions.length) {
-    document.getElementById("question").textContent = "Quiz terminé ! Score : " + score + "/15";
-    document.getElementById("answerInput").style.display = "none";
-    document.getElementById("buzzBtn").style.display = "none";
-    return;
-  }
+if (current >= questions.length) {
+  document.getElementById("question").textContent = "Quiz terminé ! Score : " + score + "/15";
+  document.getElementById("answerInput").style.display = "none";
+  document.getElementById("buzzBtn").style.display = "none";
+  document.getElementById("rejouerBtn").classList.remove("hidden");
+  return;
+}
 
   const q = questions[current];
   document.getElementById("question").textContent = q.question;
@@ -116,3 +117,18 @@ socket?.on("updateScores", players => {
     table.appendChild(row);
   });
 });
+function rejouer() {
+  fetch('https://superquiz-test.onrender.com/questions')
+    .then(res => res.json())
+    .then(data => {
+      questions = data
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 15);
+      current = 0;
+      score = 0;
+      document.getElementById("answerInput").style.display = "inline-block";
+      document.getElementById("buzzBtn").style.display = "none";
+      document.getElementById("rejouerBtn").classList.add("hidden");
+      showQuestion();
+    });
+}
