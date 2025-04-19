@@ -19,8 +19,10 @@ function startSolo() {
       score = 0;
       showQuestion();
     });
+.catch(error => {
+      console.error("Erreur lors du chargement des questions :", error);
+    });
 }
-
 function goToMultiplayer() {
   pseudo = document.getElementById("pseudo").value;
   if (!pseudo) return alert("Entre ton pseudo !");
