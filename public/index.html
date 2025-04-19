@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz Multijoueur</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div id="menu">
+    <h1>Quiz Multijoueur</h1>
+    <input type="text" id="pseudo" placeholder="Entrez votre pseudo">
+    <button onclick="startSolo()">Continuer</button>
+  </div>
+
+  <div id="createJoin" class="hidden">
+    <button onclick="createRoom()">Créer une salle</button>
+    <input type="text" id="roomCodeInput" placeholder="Code de salle">
+    <button onclick="joinRoom()">Rejoindre</button>
+  </div>
+
+  <div id="waiting" class="hidden"></div>
+
+  <div id="quiz" class="hidden">
+    <h2 id="question"></h2>
+    <input type="text" id="answerInput" placeholder="Votre réponse">
+    <button onclick="buzz()">Buzzer</button>
+    <button onclick="submitAnswer()">Valider</button>
+    <p id="score"></p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
