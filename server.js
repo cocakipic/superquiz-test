@@ -2,7 +2,9 @@
 const express = require('express');
 const cors = require("cors");
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "https://superquiz-test-ozsg-liv3qeebc-cocakipics-projects.vercel.app"
+}));
 
 const fs = require('fs');
 const path = require('path');
