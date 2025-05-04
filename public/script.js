@@ -50,15 +50,27 @@ function goToMultiplayer() {
     questions = questionList;
     current = 0;
     score = 0;
-    document.getElementById("waiting").classList.add("hidden");
-    document.getElementById("quiz").classList.remove("hidden");
+
+    document.body.innerHTML = `
+      <div id="quiz" class="container">
+        <h2 id="question"></h2>
+        <input type="text" id="answerInput" placeholder="Votre réponse">
+        <button onclick="submitAnswer()">Valider</button>
+      </div>
+    `;
     showQuestion();
   });
 
   socket.on("updateScores", players => {
-    document.getElementById("quiz").classList.add("hidden");
-    document.getElementById("scoreBoard").classList.remove("hidden");
-    document.getElementById("scoreBoard").insertAdjacentHTML("afterbegin", "<h2>🎉 Fin du quiz 🎉</h2>");
+    document.body.innerHTML = `
+      <div id="scoreBoard" class="container">
+        <h2>🎉 Fin du quiz 🎉</h2>
+        <table>
+          <thead><tr><th>Joueur</th><th>Score</th></tr></thead>
+          <tbody id="scoreTable"></tbody>
+        </table>
+      </div>
+    `;
     const table = document.getElementById("scoreTable");
     table.innerHTML = "";
     players.forEach(p => {
@@ -90,6 +102,15 @@ function goToMultiplayer() {
     document.body.appendChild(panel);
   });
 
+  socket.on("roomJoined", code => {
+    document.body.innerHTML = `
+      <div class="container">
+        <h2>Tu as rejoint la salle ${code}</h2>
+        <p>En attente que l’hôte lance la partie…</p>
+      </div>
+    `;
+  });
+
   document.querySelector(".container").classList.add("hidden");
   document.getElementById("createJoin").classList.remove("hidden");
 }
@@ -119,20 +140,12 @@ function showQuestion() {
   if (current >= questions.length) {
     document.getElementById("question").textContent = "Quiz terminé ! En attente de validation...";
     document.getElementById("answerInput").style.display = "none";
-    document.getElementById("buzzBtn").style.display = "none";
-    document.getElementById("rejouerBtn").classList.add("hidden");
     return;
   }
 
   const q = questions[current];
   document.getElementById("question").textContent = q.question;
   document.getElementById("answerInput").value = "";
-  document.getElementById("answerInput").style.display = "inline-block";
-  document.getElementById("buzzBtn").style.display = isMultiplayer ? "inline-block" : "none";
-}
-
-function buzz() {
-  if (socket) socket.emit("buzz", roomCode);
 }
 
 function submitAnswer() {
@@ -165,18 +178,4 @@ function isAnswerCorrect(input, correctAnswer) {
   if (cleanedInput === cleanedCorrect) return true;
   if (cleanedCorrect.includes(cleanedInput) || cleanedInput.includes(cleanedCorrect)) return true;
   return false;
-}
-
-function rejouer() {
-  fetch('https://superquiz-test.onrender.com/questions')
-    .then(res => res.json())
-    .then(data => {
-      questions = data;
-      current = 0;
-      score = 0;
-      document.getElementById("answerInput").style.display = "inline-block";
-      document.getElementById("buzzBtn").style.display = "none";
-      document.getElementById("rejouerBtn").classList.add("hidden");
-      showQuestion();
-    });
 }
