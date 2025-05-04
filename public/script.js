@@ -71,6 +71,7 @@ function goToMultiplayer() {
 
   socket.on("showQuestionToAll", data => {
     const q = data.question;
+    console.log(q);
     window.currentQuestion = q;
     const el = document.getElementById("question");
     if (el) el.innerText = `Question ${data.index} : ${q.question}`;
