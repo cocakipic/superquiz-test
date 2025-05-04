@@ -33,15 +33,17 @@ io.on('connection', socket => {
     const roomCode = Math.random().toString(36).substr(2, 6).toUpperCase();
     rooms[roomCode] = {
       players: [{ id: socket.id, pseudo, score: 0 }],
+      hostId: socket.id,
       started: false
     };
+    
     socket.join(roomCode);
     socket.emit('roomCreated', roomCode);
   });
 
   socket.on('joinRoom', ({ pseudo, roomCode }) => {
     const room = rooms[roomCode];
-    if (room && room.players.length < 2) {
+    if (room && room.players.length < 8) {
       room.players.push({ id: socket.id, pseudo, score: 0 });
       socket.join(roomCode);
       io.to(roomCode).emit('playersUpdate', room.players.map(p => p.pseudo));
@@ -77,7 +79,19 @@ io.on('connection', socket => {
       }
     }
   });
+
+  socket.on('launchGame', roomCode => {
+    const room = rooms[roomCode];
+    if (room && socket.id === room.hostId) {
+      io.to(roomCode).emit('startGame');
+    }
+  });
+
+
+
 });
+
+
 
 const PORT = 3000;
 server.listen(PORT, () => console.log(`Serveur en ligne sur http://localhost:${PORT}`));
