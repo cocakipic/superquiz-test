@@ -15,7 +15,7 @@ function startSolo() {
   fetch('https://superquiz-test.onrender.com/questions')
     .then(res => res.json())
     .then(data => {
-      questions = data.slice(0, 15);
+      questions = data;
       current = 0;
       score = 0;
       showQuestion();
@@ -119,13 +119,12 @@ socket?.on("updateScores", players => {
 });
 function rejouer() {
   fetch('https://superquiz-test.onrender.com/questions')
-    .then(res => res.json())
-    .then(data => {
-      questions = data
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 15);
-      current = 0;
-      score = 0;
+  .then(res => res.json())
+  .then(data => {
+    questions = data;
+    current = 0;
+    score = 0;
+    
       document.getElementById("answerInput").style.display = "inline-block";
       document.getElementById("buzzBtn").style.display = "none";
       document.getElementById("rejouerBtn").classList.add("hidden");
