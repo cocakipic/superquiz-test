@@ -1,25 +1,26 @@
 
 let socket;
 let pseudo = "";
-let questions = [];
-let current = 0;
-let score = 0;
-let isMultiplayer = false;
 let roomCode = "";
+let isMultiplayer = false;
+let isHost = false;
 
 function startSolo() {
   pseudo = document.getElementById("pseudo").value;
   if (!pseudo) return alert("Entre ton pseudo !");
-  isMultiplayer = false;
-  document.querySelector(".container").classList.add("hidden");
-  document.getElementById("quiz").classList.remove("hidden");
-
+  document.body.innerHTML = `
+    <div class="container" id="quiz">
+      <h2 id="question">Chargement...</h2>
+      <input type="text" id="answerInput" placeholder="Votre réponse">
+      <button onclick="submitAnswer()">Valider</button>
+    </div>
+  `;
   fetch('https://superquiz-test.onrender.com/questions')
     .then(res => res.json())
     .then(data => {
-      questions = data;
-      current = 0;
-      score = 0;
+      window.questions = data;
+      window.current = 0;
+      window.score = 0;
       showQuestion();
     });
 }
@@ -30,49 +31,81 @@ function goToMultiplayer() {
   isMultiplayer = true;
   socket = io("https://superquiz-test.onrender.com");
 
-  socket.on("connect", () => {
-    console.log("✅ Connecté au serveur Socket.IO");
-  });
+  socket.on("connect", () => console.log("✅ Connecté"));
 
-  socket.on('roomCreated', code => {
+  socket.on("roomCreated", code => {
+    isHost = true;
     roomCode = code;
-    document.getElementById("createJoin").classList.add("hidden");
-    document.getElementById("waitingMessage").innerText = "Salle créée : " + code + " — En attente d'autres joueurs...";
-    document.getElementById("waiting").classList.remove("hidden");
-    document.getElementById("launchBtn").classList.remove("hidden");
-  });
-
-  socket.on('playersUpdate', players => {
-    document.getElementById("waitingMessage").innerText = "Joueurs : " + players.join(" & ");
-  });
-
-  socket.on('startGame', questionList => {
-    questions = questionList;
-    current = 0;
-    score = 0;
-
     document.body.innerHTML = `
-      <div id="quiz" class="container">
-        <h2 id="question"></h2>
-        <input type="text" id="answerInput" placeholder="Votre réponse">
-        <button onclick="submitAnswer()">Valider</button>
+      <div class="container" id="waiting">
+        <h2>Salle ${code}</h2>
+        <p id="waitingMessage">En attente d'autres joueurs...</p>
+        <button onclick="launchGame()">Lancer le quiz</button>
       </div>
     `;
-    showQuestion();
+  });
+
+  socket.on("roomJoined", code => {
+    roomCode = code;
+    document.body.innerHTML = `
+      <div class="container"><h2>Tu as rejoint la salle ${code}</h2><p>En attente du lancement...</p></div>
+    `;
+  });
+
+  socket.on("playersUpdate", players => {
+    const msg = "Joueurs : " + players.join(", ");
+    const el = document.getElementById("waitingMessage");
+    if (el) el.innerText = msg;
+  });
+
+  socket.on("startGame", () => {
+    document.body.innerHTML = `
+      <div class="container" id="quiz">
+        <h2 id="question">En attente de la question...</h2>
+        <input type="text" id="answerInput" placeholder="Votre réponse">
+        <button onclick="submitAnswer()">Valider</button>
+        ${isHost ? '<button onclick="nextQuestion()">Question suivante</button>' : ''}
+      </div>
+    `;
+  });
+
+  socket.on("showQuestionToAll", data => {
+    const q = data.question;
+    window.currentQuestion = q;
+    const el = document.getElementById("question");
+    if (el) el.innerText = `Question ${data.index} : ${q.question}`;
+    const input = document.getElementById("answerInput");
+    if (input) input.value = "";
+  });
+
+  socket.on("showValidationPanel", answers => {
+    const div = document.createElement("div");
+    div.innerHTML = "<h2>Validation des réponses</h2>";
+    answers.forEach(ans => {
+      const block = document.createElement("div");
+      block.innerHTML = `
+        <p>${ans.pseudo} a répondu : "${ans.answerText}"</p>
+        <button onclick="validateAnswer('${ans.playerId}', true)">✔️</button>
+        <button onclick="validateAnswer('${ans.playerId}', false)">❌</button>
+      `;
+      div.appendChild(block);
+    });
+    const btn = document.createElement("button");
+    btn.textContent = "Valider les scores";
+    btn.onclick = () => socket.emit("showScores", roomCode);
+    div.appendChild(btn);
+    document.body.innerHTML = "";
+    document.body.appendChild(div);
   });
 
   socket.on("updateScores", players => {
     document.body.innerHTML = `
-      <div id="scoreBoard" class="container">
+      <div class="container">
         <h2>🎉 Fin du quiz 🎉</h2>
-        <table>
-          <thead><tr><th>Joueur</th><th>Score</th></tr></thead>
-          <tbody id="scoreTable"></tbody>
-        </table>
+        <table><thead><tr><th>Joueur</th><th>Score</th></tr></thead><tbody id="scoreTable"></tbody></table>
       </div>
     `;
     const table = document.getElementById("scoreTable");
-    table.innerHTML = "";
     players.forEach(p => {
       const row = document.createElement("tr");
       row.innerHTML = `<td>${p.pseudo}</td><td>${p.score}</td>`;
@@ -80,79 +113,38 @@ function goToMultiplayer() {
     });
   });
 
-  socket.on("showValidationPanel", answers => {
-    const panel = document.createElement("div");
-    panel.innerHTML = `<h2>Validation des réponses</h2>`;
-    answers.forEach(({ playerId, pseudo, answerText }) => {
-      const div = document.createElement("div");
-      div.innerHTML = `
-        <p><strong>${pseudo}</strong> a répondu : "${answerText}"</p>
-        <button onclick="validateAnswer('${playerId}', true)">✔️ Accepter</button>
-        <button onclick="validateAnswer('${playerId}', false)">❌ Refuser</button>
-      `;
-      panel.appendChild(div);
-    });
-    const finalBtn = document.createElement("button");
-    finalBtn.textContent = "Valider les scores";
-    finalBtn.onclick = () => {
-      socket.emit("showScores", roomCode);
-    };
-    panel.appendChild(finalBtn);
-    document.body.innerHTML = "";
-    document.body.appendChild(panel);
-  });
-
-  socket.on("roomJoined", code => {
-    document.body.innerHTML = `
-      <div class="container">
-        <h2>Tu as rejoint la salle ${code}</h2>
-        <p>En attente que l’hôte lance la partie…</p>
-      </div>
-    `;
-  });
-
-  document.querySelector(".container").classList.add("hidden");
-  document.getElementById("createJoin").classList.remove("hidden");
-}
-
-function validateAnswer(playerId, isCorrect) {
-  socket.emit("validateAnswer", { roomCode, playerId, isCorrect });
+  document.body.innerHTML = `
+    <div class="container" id="createJoin">
+      <h2>Multijoueur</h2>
+      <button onclick="createRoom()">Créer une salle</button>
+      <input type="text" id="roomCodeInput" placeholder="Code de salle">
+      <button onclick="joinRoom()">Rejoindre</button>
+    </div>
+  `;
 }
 
 function createRoom() {
-  socket.emit('createRoom', { pseudo });
+  socket.emit("createRoom", { pseudo });
 }
 
 function joinRoom() {
   const code = document.getElementById("roomCodeInput").value.toUpperCase();
-  if (!code) return alert("Code de salle requis !");
-  roomCode = code;
-  socket.emit('joinRoom', { pseudo, roomCode: code });
+  if (!code) return alert("Code requis !");
+  socket.emit("joinRoom", { pseudo, roomCode: code });
 }
 
 function launchGame() {
-  if (socket && roomCode) {
-    socket.emit("launchGame", roomCode);
-  }
+  socket.emit("launchGame", roomCode);
 }
 
-function showQuestion() {
-  if (current >= questions.length) {
-    document.getElementById("question").textContent = "Quiz terminé ! En attente de validation...";
-    document.getElementById("answerInput").style.display = "none";
-    return;
-  }
-
-  const q = questions[current];
-  document.getElementById("question").textContent = q.question;
-  document.getElementById("answerInput").value = "";
+function nextQuestion() {
+  socket.emit("nextQuestion", roomCode);
 }
 
 function submitAnswer() {
   const input = document.getElementById("answerInput").value.trim();
-  const q = questions[current];
-
   if (!isMultiplayer) {
+    const q = questions[current];
     const correct = isAnswerCorrect(input, q.answer);
     if (correct) score++;
     current++;
@@ -163,9 +155,21 @@ function submitAnswer() {
       playerId: socket.id,
       answerText: input
     });
-    current++;
-    showQuestion();
   }
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    document.getElementById("question").textContent = "Fin du quiz";
+    return;
+  }
+  const q = questions[current];
+  document.getElementById("question").textContent = q.question;
+  document.getElementById("answerInput").value = "";
+}
+
+function validateAnswer(playerId, isCorrect) {
+  socket.emit("validateAnswer", { roomCode, playerId, isCorrect });
 }
 
 function normalize(str) {
@@ -173,9 +177,7 @@ function normalize(str) {
 }
 
 function isAnswerCorrect(input, correctAnswer) {
-  const cleanedInput = normalize(input);
-  const cleanedCorrect = normalize(correctAnswer);
-  if (cleanedInput === cleanedCorrect) return true;
-  if (cleanedCorrect.includes(cleanedInput) || cleanedInput.includes(cleanedCorrect)) return true;
-  return false;
+  const a = normalize(input);
+  const b = normalize(correctAnswer);
+  return a === b || a.includes(b) || b.includes(a);
 }
