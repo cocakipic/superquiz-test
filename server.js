@@ -12,7 +12,7 @@ const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "https://superquiz-test-ozsg-liv3qeebc-cocakipics-projects.vercel.app",
     methods: ["GET", "POST"]
   }
 });
