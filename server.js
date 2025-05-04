@@ -15,8 +15,11 @@ const { Server } = require('socket.io');
 const io = new Server(server, {
   cors: {
     origin: "https://superquiz-test-ozsg-liv3qeebc-cocakipics-projects.vercel.app",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+    credentials: true
+  },
+  transports: ["websocket"] // ⬅️ force WebSocket au lieu de fallback polling
 });
 
 app.use(express.static('public'));
