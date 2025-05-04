@@ -1,3 +1,4 @@
+
 let socket;
 let pseudo = "";
 let questions = [];
@@ -20,15 +21,13 @@ function startSolo() {
       current = 0;
       score = 0;
       showQuestion();
-    })
-    .catch(error => console.error("Erreur chargement questions :", error));
+    });
 }
 
 function goToMultiplayer() {
   pseudo = document.getElementById("pseudo").value;
   if (!pseudo) return alert("Entre ton pseudo !");
   isMultiplayer = true;
-  console.log("Tentative de connexion au serveur Socket.IO...");
   socket = io("https://superquiz-test.onrender.com");
 
   socket.on("connect", () => {
@@ -69,8 +68,28 @@ function goToMultiplayer() {
     });
   });
 
+  socket.on("showValidationPanel", answers => {
+    const panel = document.createElement("div");
+    panel.innerHTML = `<h2>Validation des réponses</h2>`;
+    answers.forEach(({ playerId, pseudo, answerText }) => {
+      const div = document.createElement("div");
+      div.innerHTML = `
+        <p><strong>${pseudo}</strong> a répondu : "${answerText}"</p>
+        <button onclick="validateAnswer('${playerId}', true)">✔️ Accepter</button>
+        <button onclick="validateAnswer('${playerId}', false)">❌ Refuser</button>
+      `;
+      panel.appendChild(div);
+    });
+    document.body.innerHTML = "";
+    document.body.appendChild(panel);
+  });
+
   document.querySelector(".container").classList.add("hidden");
   document.getElementById("createJoin").classList.remove("hidden");
+}
+
+function validateAnswer(playerId, isCorrect) {
+  socket.emit("validateAnswer", { roomCode, playerId, isCorrect });
 }
 
 function createRoom() {
@@ -92,10 +111,10 @@ function launchGame() {
 
 function showQuestion() {
   if (current >= questions.length) {
-    document.getElementById("question").textContent = "Quiz terminé ! Score : " + score + "/15";
+    document.getElementById("question").textContent = "Quiz terminé ! En attente de validation...";
     document.getElementById("answerInput").style.display = "none";
     document.getElementById("buzzBtn").style.display = "none";
-    document.getElementById("rejouerBtn").classList.remove("hidden");
+    document.getElementById("rejouerBtn").classList.add("hidden");
     return;
   }
 
@@ -113,9 +132,9 @@ function buzz() {
 function submitAnswer() {
   const input = document.getElementById("answerInput").value.trim();
   const q = questions[current];
-  const correct = normalize(input) === normalize(q.answer);
 
   if (!isMultiplayer) {
+    const correct = normalize(input) === normalize(q.answer);
     if (correct) score++;
     current++;
     showQuestion();
@@ -123,7 +142,7 @@ function submitAnswer() {
     socket.emit("answer", {
       roomCode,
       playerId: socket.id,
-      isCorrect: correct
+      answerText: input
     });
     current++;
     showQuestion();
@@ -131,7 +150,7 @@ function submitAnswer() {
 }
 
 function normalize(str) {
-  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return str.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
 function rejouer() {
