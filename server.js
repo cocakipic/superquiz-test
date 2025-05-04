@@ -72,6 +72,7 @@ io.on('connection', socket => {
     if (!room || socket.id !== room.hostId) return;
     if (room.currentIndex < room.questions.length) {
       const q = room.questions[room.currentIndex];
+      room.pendingAnswers = []; // reset for new question
       io.to(roomCode).emit('showQuestionToAll', { question: q, index: room.currentIndex + 1 });
       room.currentIndex++;
     } else {
@@ -102,6 +103,7 @@ io.on('connection', socket => {
     if (player && isCorrect) {
       player.score += 1;
     }
+    // Remove validated answer from pendingAnswers
     room.pendingAnswers = room.pendingAnswers.filter(r => r.playerId !== playerId);
   });
 
@@ -110,10 +112,6 @@ io.on('connection', socket => {
     if (room) {
       io.to(roomCode).emit("updateScores", room.players);
     }
-  });
-
-  socket.on('buzz', roomCode => {
-    io.to(roomCode).emit('buzzed', socket.id);
   });
 
   socket.on('disconnect', () => {
