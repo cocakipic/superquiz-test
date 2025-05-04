@@ -47,9 +47,6 @@ io.on('connection', socket => {
       room.players.push({ id: socket.id, pseudo, score: 0 });
       socket.join(roomCode);
       io.to(roomCode).emit('playersUpdate', room.players.map(p => p.pseudo));
-      if (room.players.length === 2) {
-        io.to(roomCode).emit('startGame');
-      }
     } else {
       socket.emit('roomError', 'Salle pleine ou inexistante.');
     }
