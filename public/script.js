@@ -27,11 +27,47 @@ function goToMultiplayer() {
   pseudo = document.getElementById("pseudo").value;
   if (!pseudo) return alert("Entre ton pseudo !");
   isMultiplayer = true;
+
   console.log("Tentative de connexion au serveur Socket.IO...");
-  socket = io("https://superquiz-test.onrender.com");  // ← très important !
+  socket = io("https://superquiz-test.onrender.com");
+
   socket.on("connect", () => {
     console.log("✅ Connecté au serveur Socket.IO");
   });
+
+  socket.on('roomCreated', code => {
+    console.log("Salle créée :", code);
+    document.getElementById("createJoin").classList.add("hidden");
+    document.getElementById("waitingMessage").innerText = "Salle créée : " + code + " — En attente d'autres joueurs...";
+    document.getElementById("waiting").classList.remove("hidden");
+  });
+
+  socket.on('playersUpdate', players => {
+    document.getElementById("waitingMessage").innerText = "Joueurs : " + players.join(" & ");
+  });
+
+  socket.on('startGame', () => {
+    fetch('https://superquiz-test.onrender.com/questions')
+      .then(res => res.json())
+      .then(data => {
+        questions = data;
+        current = 0;
+        document.getElementById("waiting").classList.add("hidden");
+        document.getElementById("quiz").classList.remove("hidden");
+        showQuestion();
+      });
+  });
+
+  socket.on("updateScores", players => {
+    const table = document.getElementById("scoreTable");
+    table.innerHTML = "";
+    players.forEach(p => {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${p.pseudo}</td><td>${p.score}</td>`;
+      table.appendChild(row);
+    });
+  });
+
   document.querySelector(".container").classList.add("hidden");
   document.getElementById("createJoin").classList.remove("hidden");
 }
