@@ -36,7 +36,8 @@ io.on('connection', socket => {
       players: [{ id: socket.id, pseudo, score: 0 }],
       hostId: socket.id,
       started: false,
-      pendingAnswers: []
+      pendingAnswers: [],
+      questions: []
     };
     socket.join(roomCode);
     socket.emit('roomCreated', roomCode);
@@ -90,7 +91,10 @@ io.on('connection', socket => {
   socket.on('launchGame', roomCode => {
     const room = rooms[roomCode];
     if (room && socket.id === room.hostId) {
-      io.to(roomCode).emit('startGame');
+      const data = fs.readFileSync(path.join(__dirname, 'questions.json'));
+      const allQuestions = JSON.parse(data);
+      room.questions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 15);
+      io.to(roomCode).emit('startGame', room.questions);
     }
   });
 
