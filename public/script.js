@@ -4,6 +4,7 @@ let questions = [];
 let current = 0;
 let score = 0;
 let isMultiplayer = false;
+let roomCode = "";
 
 function startSolo() {
   pseudo = document.getElementById("pseudo").value;
@@ -27,7 +28,6 @@ function goToMultiplayer() {
   pseudo = document.getElementById("pseudo").value;
   if (!pseudo) return alert("Entre ton pseudo !");
   isMultiplayer = true;
-
   console.log("Tentative de connexion au serveur Socket.IO...");
   socket = io("https://superquiz-test.onrender.com");
 
@@ -36,10 +36,11 @@ function goToMultiplayer() {
   });
 
   socket.on('roomCreated', code => {
-    console.log("Salle créée :", code);
+    roomCode = code;
     document.getElementById("createJoin").classList.add("hidden");
     document.getElementById("waitingMessage").innerText = "Salle créée : " + code + " — En attente d'autres joueurs...";
     document.getElementById("waiting").classList.remove("hidden");
+    document.getElementById("launchBtn").classList.remove("hidden");
   });
 
   socket.on('playersUpdate', players => {
@@ -72,7 +73,6 @@ function goToMultiplayer() {
   document.getElementById("createJoin").classList.remove("hidden");
 }
 
-
 function createRoom() {
   socket.emit('createRoom', { pseudo });
 }
@@ -80,17 +80,24 @@ function createRoom() {
 function joinRoom() {
   const code = document.getElementById("roomCodeInput").value.toUpperCase();
   if (!code) return alert("Code de salle requis !");
+  roomCode = code;
   socket.emit('joinRoom', { pseudo, roomCode: code });
 }
 
-function showQuestion() {
-if (current >= questions.length) {
-  document.getElementById("question").textContent = "Quiz terminé ! Score : " + score + "/15";
-  document.getElementById("answerInput").style.display = "none";
-  document.getElementById("buzzBtn").style.display = "none";
-  document.getElementById("rejouerBtn").classList.remove("hidden");
-  return;
+function launchGame() {
+  if (socket && roomCode) {
+    socket.emit("launchGame", roomCode);
+  }
 }
+
+function showQuestion() {
+  if (current >= questions.length) {
+    document.getElementById("question").textContent = "Quiz terminé ! Score : " + score + "/15";
+    document.getElementById("answerInput").style.display = "none";
+    document.getElementById("buzzBtn").style.display = "none";
+    document.getElementById("rejouerBtn").classList.remove("hidden");
+    return;
+  }
 
   const q = questions[current];
   document.getElementById("question").textContent = q.question;
@@ -127,45 +134,13 @@ function normalize(str) {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-socket?.on('roomCreated', code => {
-  document.getElementById("createJoin").classList.add("hidden");
-  document.getElementById("waiting").innerText = "Salle créée : " + code + " — En attente d'autres joueurs...";
-  document.getElementById("waiting").classList.remove("hidden");
-});
-
-socket?.on('playersUpdate', players => {
-  document.getElementById("waiting").innerText = "Joueurs : " + players.join(" & ");
-});
-
-socket?.on('startGame', () => {
+function rejouer() {
   fetch('https://superquiz-test.onrender.com/questions')
     .then(res => res.json())
     .then(data => {
-      questions = data.slice(0, 15);
+      questions = data;
       current = 0;
-      document.getElementById("waiting").classList.add("hidden");
-      document.getElementById("quiz").classList.remove("hidden");
-      showQuestion();
-    });
-});
-
-socket?.on("updateScores", players => {
-  const table = document.getElementById("scoreTable");
-  table.innerHTML = "";
-  players.forEach(p => {
-    const row = document.createElement("tr");
-    row.innerHTML = `<td>${p.pseudo}</td><td>${p.score}</td>`;
-    table.appendChild(row);
-  });
-});
-function rejouer() {
-  fetch('https://superquiz-test.onrender.com/questions')
-  .then(res => res.json())
-  .then(data => {
-    questions = data;
-    current = 0;
-    score = 0;
-
+      score = 0;
       document.getElementById("answerInput").style.display = "inline-block";
       document.getElementById("buzzBtn").style.display = "none";
       document.getElementById("rejouerBtn").classList.add("hidden");
