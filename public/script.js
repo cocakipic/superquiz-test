@@ -4,6 +4,7 @@ let pseudo = "";
 let roomCode = "";
 let isMultiplayer = false;
 let isHost = false;
+let validatedCount = 0;
 
 function startSolo() {
   pseudo = document.getElementById("pseudo").value;
@@ -64,7 +65,6 @@ function goToMultiplayer() {
         <h2 id="question">En attente de la question...</h2>
         <input type="text" id="answerInput" placeholder="Votre réponse">
         <button onclick="submitAnswer()">Valider</button>
-        ${isHost ? '<button onclick="nextQuestion()">Question suivante</button>' : ''}
       </div>
     `;
   });
@@ -76,26 +76,30 @@ function goToMultiplayer() {
     if (el) el.innerText = `Question ${data.index} : ${q.question}`;
     const input = document.getElementById("answerInput");
     if (input) input.value = "";
+
+    // Retirer bouton s'il existait
+    const oldBtn = document.getElementById("nextBtn");
+    if (oldBtn) oldBtn.remove();
   });
 
   socket.on("showValidationPanel", answers => {
-    const div = document.createElement("div");
-    div.innerHTML = "<h2>Validation des réponses</h2>";
+    validatedCount = 0;
+    const panel = document.createElement("div");
+    panel.innerHTML = "<h2>Validation des réponses</h2>";
     answers.forEach(ans => {
       const block = document.createElement("div");
       block.innerHTML = `
         <p>${ans.pseudo} a répondu : "${ans.answerText}"</p>
-        <button onclick="validateAnswer('${ans.playerId}', true)">✔️</button>
-        <button onclick="validateAnswer('${ans.playerId}', false)">❌</button>
+        <button onclick="validateAnswer('${ans.playerId}', true, this)">✔️</button>
+        <button onclick="validateAnswer('${ans.playerId}', false, this)">❌</button>
       `;
-      div.appendChild(block);
+      panel.appendChild(block);
     });
-    const btn = document.createElement("button");
-    btn.textContent = "Valider les scores";
-    btn.onclick = () => socket.emit("showScores", roomCode);
-    div.appendChild(btn);
+    const container = document.createElement("div");
+    container.id = "validationPanel";
+    container.appendChild(panel);
     document.body.innerHTML = "";
-    document.body.appendChild(div);
+    document.body.appendChild(container);
   });
 
   socket.on("updateScores", players => {
@@ -168,8 +172,18 @@ function showQuestion() {
   document.getElementById("answerInput").value = "";
 }
 
-function validateAnswer(playerId, isCorrect) {
+function validateAnswer(playerId, isCorrect, btn) {
   socket.emit("validateAnswer", { roomCode, playerId, isCorrect });
+  btn.parentElement.style.opacity = 0.5;
+  validatedCount++;
+
+  if (validatedCount >= document.querySelectorAll("#validationPanel button").length / 2) {
+    const nextBtn = document.createElement("button");
+    nextBtn.id = "nextBtn";
+    nextBtn.textContent = "Question suivante";
+    nextBtn.onclick = nextQuestion;
+    document.getElementById("validationPanel").appendChild(nextBtn);
+  }
 }
 
 function normalize(str) {
