@@ -37,7 +37,8 @@ io.on('connection', socket => {
       hostId: socket.id,
       started: false,
       pendingAnswers: [],
-      questions: []
+      questions: [],
+      currentIndex: 0
     };
     socket.join(roomCode);
     socket.emit('roomCreated', roomCode);
@@ -55,8 +56,27 @@ io.on('connection', socket => {
     }
   });
 
-  socket.on('buzz', roomCode => {
-    io.to(roomCode).emit('buzzed', socket.id);
+  socket.on('launchGame', roomCode => {
+    const room = rooms[roomCode];
+    if (room && socket.id === room.hostId) {
+      const data = fs.readFileSync(path.join(__dirname, 'questions.json'));
+      const allQuestions = JSON.parse(data);
+      room.questions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 15);
+      room.currentIndex = 0;
+      io.to(roomCode).emit('startGame');
+    }
+  });
+
+  socket.on('nextQuestion', roomCode => {
+    const room = rooms[roomCode];
+    if (!room || socket.id !== room.hostId) return;
+    if (room.currentIndex < room.questions.length) {
+      const q = room.questions[room.currentIndex];
+      io.to(roomCode).emit('showQuestionToAll', { question: q, index: room.currentIndex + 1 });
+      room.currentIndex++;
+    } else {
+      io.to(room.hostId).emit('showValidationPanel', room.pendingAnswers);
+    }
   });
 
   socket.on('answer', ({ roomCode, playerId, answerText }) => {
@@ -92,14 +112,8 @@ io.on('connection', socket => {
     }
   });
 
-  socket.on('launchGame', roomCode => {
-    const room = rooms[roomCode];
-    if (room && socket.id === room.hostId) {
-      const data = fs.readFileSync(path.join(__dirname, 'questions.json'));
-      const allQuestions = JSON.parse(data);
-      room.questions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 15);
-      io.to(roomCode).emit('startGame', room.questions);
-    }
+  socket.on('buzz', roomCode => {
+    io.to(roomCode).emit('buzzed', socket.id);
   });
 
   socket.on('disconnect', () => {
