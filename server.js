@@ -78,7 +78,11 @@ io.on('connection', socket => {
       player.score += 1;
     }
     room.pendingAnswers = room.pendingAnswers.filter(r => r.playerId !== playerId);
-    if (room.pendingAnswers.length === 0) {
+  });
+
+  socket.on('showScores', roomCode => {
+    const room = rooms[roomCode];
+    if (room) {
       io.to(roomCode).emit("updateScores", room.players);
     }
   });
