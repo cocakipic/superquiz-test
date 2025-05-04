@@ -28,10 +28,10 @@ function goToMultiplayer() {
   if (!pseudo) return alert("Entre ton pseudo !");
   isMultiplayer = true;
   console.log("Tentative de connexion au serveur Socket.IO...");
+  socket = io("https://superquiz-test.onrender.com");  // ← très important !
   socket.on("connect", () => {
     console.log("✅ Connecté au serveur Socket.IO");
   });
-  socket = io("https://superquiz-test.onrender.com");  // ← très important !
   document.querySelector(".container").classList.add("hidden");
   document.getElementById("createJoin").classList.remove("hidden");
 }
