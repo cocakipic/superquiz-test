@@ -48,6 +48,7 @@ io.on('connection', socket => {
     if (room && room.players.length < 8) {
       room.players.push({ id: socket.id, pseudo, score: 0 });
       socket.join(roomCode);
+      socket.emit('roomJoined', roomCode);
       io.to(roomCode).emit('playersUpdate', room.players.map(p => p.pseudo));
     } else {
       socket.emit('roomError', 'Salle pleine ou inexistante.');
@@ -63,6 +64,9 @@ io.on('connection', socket => {
     if (!room) return;
     const player = room.players.find(p => p.id === playerId);
     if (!player) return;
+
+    const alreadyAnswered = room.pendingAnswers.some(p => p.playerId === playerId);
+    if (alreadyAnswered) return;
 
     room.pendingAnswers.push({ playerId, pseudo: player.pseudo, answerText });
 
