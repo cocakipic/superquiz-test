@@ -27,10 +27,15 @@ function goToMultiplayer() {
   pseudo = document.getElementById("pseudo").value;
   if (!pseudo) return alert("Entre ton pseudo !");
   isMultiplayer = true;
-  socket = io("https://superquiz-test.onrender.com");
+  console.log("Tentative de connexion au serveur Socket.IO...");
+  socket.on("connect", () => {
+    console.log("✅ Connecté au serveur Socket.IO");
+  });
+  socket = io("https://superquiz-test.onrender.com");  // ← très important !
   document.querySelector(".container").classList.add("hidden");
   document.getElementById("createJoin").classList.remove("hidden");
 }
+
 
 function createRoom() {
   socket.emit('createRoom', { pseudo });
@@ -124,7 +129,7 @@ function rejouer() {
     questions = data;
     current = 0;
     score = 0;
-    
+
       document.getElementById("answerInput").style.display = "inline-block";
       document.getElementById("buzzBtn").style.display = "none";
       document.getElementById("rejouerBtn").classList.add("hidden");
